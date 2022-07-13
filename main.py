@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter import messagebox
 from random import choice, randint, shuffle
 import pyperclip
-
+import json
 import pymongo
 import pandas as pd
 
@@ -48,23 +48,72 @@ def mongo(informacoes):
 
     print('Dados inseridos com sucesso!')
 def save():
-    site = website_entry.get()
+    site = website_entry.get().lower()
     user = username_entry.get()
     password = password_entry.get()
+    new_data_dict = {site:{'user': user, 'password': password}}
 
     if len(site) == 0 or len(password) == 0 or len(user) == 0:
         messagebox.showinfo(title="algo errado nao esta certo.", message="Voce não preencheu tudo, volte e verifique. ")
     else:
+        try:
+            # is_ok = messagebox.askokcancel(title=site, message=f"Deseja salvar as informações, usuario: {user}, e senha: {password}?")
+            # if is_ok:
+            # abre e le o arquivo json
+            with open("data.json", "r") as data_file:
 
-        is_ok = messagebox.askokcancel(title=site, message=f"Deseja salvar as informações, usuario: {user}, e senha: {password}?")
-        if is_ok:
-            with open("data.txt", "a") as data_file:
-                enviar = data_file.write(f"{site}, {user}, {password}\n")
-                website_entry.delete(0, END)
-                username_entry.delete(0, END)
-                password_entry.delete(0, END)
+                # Reading old data
+                arquivo = json.load(data_file)
+
+                # updating old data with new data
+                arquivo.update(new_data_dict)
+
+
+        except FileNotFoundError:
+            with open("data.json", "w") as data_file:
+                # Saving updated data
+                json.dump(new_data_dict, data_file, indent=4)
+
+                print(new_data_dict)
+
+
+
+        else:
+            with open("data.json", "w") as data_file:
+                # Saving updated data
+                json.dump(arquivo, data_file, indent=4)
+
+                print(arquivo)
+
+
             #mongo(enviar)
+
+
+        finally:
             messagebox.showinfo(title="Sucesso", message="Dados salvos com sucesso!!")
+            website_entry.delete(0, END)
+            password_entry.delete(0, END)
+def search():
+    if len(website_entry.get()) != 0:
+        search_website = website_entry.get().lower()
+        try:
+            with open("data.json", "r") as data_file:
+                arquivo = json.load(data_file)
+
+        except FileNotFoundError:
+            messagebox.showinfo(title="Erro", message="Arquivo não encontrado")
+
+        else:
+            if search_website in arquivo:
+                messagebox.showinfo(title="Sucesso",
+                                    message=f"para o site: {search_website}, o Usuario: {arquivo[search_website]['user']}, Senha: {arquivo[search_website]['password']}")
+                pyperclip.copy(arquivo[search_website]['password'])
+
+            else:
+                messagebox.showinfo(title="Erro", message="Site não encontrado")
+
+    else:
+        messagebox.showinfo(title="Erro", message="Voce não preencheu o site")
 
 
 
@@ -85,7 +134,7 @@ canvas.grid(row=0, column=0, rowspan=6)
 
 #labels
 #
-website_label = Label(text="Site",width=5)
+website_label = Label(text="Site",width=2)
 website_label.grid( row=1, column=1)
 username_label = Label(text="Username")
 username_label.grid(row=2, column=1)
@@ -95,8 +144,8 @@ create_name = Label(text="by Marco Aurélio Menezes",width=20,font=("arial",7) )
 create_name.grid( row=7, column=0)
 #
 # # Entries
-website_entry = Entry(width=35)
-website_entry.grid(row=1,column=2,columnspan=2)
+website_entry = Entry(width=21)
+website_entry.grid(row=1,column=2)
 username_entry = Entry(width=35)
 username_entry.grid(row=2,column=2,columnspan=2)
 username_entry.insert(0,"adoteumdev@gmail.com")
@@ -109,6 +158,9 @@ generator_button_password.grid(row=3,column=3)
 
 add_button = Button(text="Adicionar", width=30, command=save)
 add_button.grid(row=4,column=2,columnspan=2)
+
+search_button = Button(text="Buscar", width=10, command=search)
+search_button.grid(row=1,column=3)
 
 # r1 = Label(bg="red", width=43, height=17)
 # r1.grid(row=0, column=0 )
